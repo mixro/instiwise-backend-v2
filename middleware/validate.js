@@ -1,7 +1,6 @@
 import { body, validationResult } from 'express-validator'
 
 export const validateRegister = [
-    body('username').trim().notEmpty().withMessage('Username is required'),
     body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
     .matches(/[A-Z]/).withMessage('Password must contain an uppercase letter')
@@ -20,3 +19,7 @@ export const validateRequest = (req, res, next) => {
     }
     next();
 };
+
+export const validateUsername = [
+    body('username').trim().notEmpty().withMessage('Username is required'),
+]

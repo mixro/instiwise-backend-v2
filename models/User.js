@@ -2,7 +2,14 @@ import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema(
   {
-    username: { type: String, required: true, unique: true },
+    username: { 
+      type: String, 
+      required: true, 
+      unique: true,
+      default: function () {
+        return `user_${Math.random().toString(36).substring(2, 9)}`
+      }
+    },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     gender: { type: String },
@@ -14,6 +21,7 @@ const userSchema = new mongoose.Schema(
     connectionsCount: { type: Number, default: 0 }, // Tracks number of connections
     projectsCount: { type: Number, default: 0 }, // Tracks number of projects
     isAdmin: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: false }, // New field to track username setup
   },
   { timestamps: true }
 );

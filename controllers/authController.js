@@ -4,22 +4,22 @@ import User from '../models/User.js';
 import redisClient from '../config/redis.js';
 
 export const register = async (req, res) => {
-  const { username, email, password } = req.body;
+  const { email, password } = req.body;
 
   try {
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email or username already in use', error: 'auth_error' });
+      return res.status(400).json({ success: false, message: 'Email already in use', error: 'auth_error' });
     }
 
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const user = new User({
-      username,
       email,
       password: hashedPassword,
       isAdmin: false,
+      isActive: false,
     });
     await user.save();
 
@@ -35,10 +35,63 @@ export const register = async (req, res) => {
             isAdmin: user.isAdmin,
             projectCount: user.projectsCount, 
             connectionsCount: user.connectionsCount,
+            isActive: user.isActive
         }, 
         accessToken 
       },
       message: 'User created',
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+  }
+};
+
+export const setupUsername = async (req, res) => {
+  const { username } = req.body;
+  const userId = req.user.id; // From authenticateToken
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found', error: 'auth_error' });
+    }
+
+    if (user.isActive) {
+      return res.status(400).json({ success: false, message: 'Username already set', error: 'auth_error' });
+    }
+
+    // Validate username (e.g., length, characters)
+    if (!username || username.length < 3) {
+      return res.status(400).json({ success: false, message: 'Username must be at least 3 characters', error: 'validation_error' });
+    }
+
+    // Check uniqueness
+    const existingUser = await User.findOne({ username });
+    if (existingUser && existingUser._id.toString() !== userId) {
+      return res.status(400).json({ success: false, message: 'Username already taken', error: 'validation_error' });
+    }
+
+    user.username = username;
+    user.isActive = true;
+    await user.save();
+
+    const accessToken = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({
+      success: true,
+      data: { 
+         user: {
+            _id: user._id, 
+            username: user.username, 
+            email: user.email, 
+            isAdmin: user.isAdmin,
+            projectCount: user.projectsCount, 
+            connectionsCount: user.connectionsCount,
+            isActive: user.isActive
+        },
+        accessToken 
+      },
+      message: 'Username set successfully',
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
@@ -71,6 +124,7 @@ export const login = async (req, res) => {
             isAdmin: user.isAdmin,
             projectCount: user.projectsCount, 
             connectionsCount: user.connectionsCount,
+            isActive: user.isActive
         }, 
         accessToken 
       },
@@ -90,6 +144,10 @@ export const getMe = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found', error: 'auth_error' });
     }
 
+    if (!user.isActive) {
+        return res.status(403).json({ success: false, message: "Please set your username first", error: 'auth_error' });
+    }
+
     res.json({
       success: true,
       data: {
@@ -102,6 +160,7 @@ export const getMe = async (req, res) => {
         projects: user.projects,
         connectionsCount: user.connectionsCount,
         connections: user.connections,
+        isActive: user.isActive,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
