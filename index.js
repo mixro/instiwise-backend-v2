@@ -7,6 +7,7 @@ import errorHandler from './middleware/errorHandler.js';
 import redisClient from './config/redis.js';
 import rateLimit from 'express-rate-limit';
 import connectDB from './config/mongodb.js';
+import authRoutes from './routes/authRoutes.js'
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -51,16 +52,16 @@ app.use(
   }
 })();
 
+// Routes 
+app.use('/v1/api/auth', authRoutes);
+
 // Error handling
 app.use(errorHandler);
-
-// Routes (to be expanded)
-app.get('/', (req, res) => res.json({ success: true, message: 'InstiWise API' }));
 
 // Start server
 const PORT = process.env.PORT || 8800;
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`INSTIWISE SERVER IS RUNNING ON PORT ${PORT}`);
+    console.log(`🚀 INSTIWISE SERVER IS RUNNING ON PORT ${PORT}`);
   });
 });
