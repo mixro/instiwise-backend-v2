@@ -33,6 +33,7 @@ export const register = async (req, res) => {
             username: user.username, 
             email: user.email, 
             img: user.img,
+            bio: user.bio,
             awards: user.awards,
             isAdmin: user.isAdmin,
             projectsCount: user.projectsCount, 
@@ -87,6 +88,7 @@ export const setupUsername = async (req, res) => {
             username: user.username, 
             email: user.email, 
             img: user.img,
+            bio: user.bio,
             awards: user.awards,
             isAdmin: user.isAdmin,
             projectsCount: user.projectsCount, 
@@ -126,6 +128,7 @@ export const login = async (req, res) => {
             username: user.username, 
             email: user.email, 
             img: user.img,
+            bio: user.bio,
             awards: user.awards,
             isAdmin: user.isAdmin,
             projectsCount: user.projectsCount, 
@@ -143,9 +146,8 @@ export const login = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password')
-        .populate('projects', 'title description')
-        .populate('connections', 'user1 user2 status');
+    const user = await User.findById(req.user.id).select('-password');
+        
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found', error: 'auth_error' });
     }
@@ -156,11 +158,12 @@ export const getMe = async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-         _id: user._id,
+      user: {
+        _id: user._id,
         username: user.username,
         email: user.email,
         img: user.img,
+        bio: user.bio,
         isAdmin: user.isAdmin,
         awards: user.awards,
         projectsCount: user.projectsCount,
