@@ -7,7 +7,10 @@ import errorHandler from './middleware/errorHandler.js';
 import redisClient from './config/redis.js';
 import rateLimit from 'express-rate-limit';
 import connectDB from './config/mongodb.js';
-import authRoutes from './routes/authRoutes.js'
+import authRoutes from './routes/authRoutes.js';
+import projectRoutes from './routes/projects.js';
+import eventRoutes from './routes/events.js';
+import newsRoutes from './routes/news.js';
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -54,6 +57,9 @@ app.use(
 
 // Routes 
 app.use('/v1/api/auth', authRoutes);
+app.use('/api/v1/projects', projectRoutes);
+app.use('/api/v1/events', eventRoutes);
+app.use('/api/v1/news', newsRoutes);
 
 // Error handling
 app.use(errorHandler);
