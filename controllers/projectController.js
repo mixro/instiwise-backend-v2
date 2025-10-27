@@ -38,11 +38,37 @@ export const createProject = async (req, res) => {
   }
 };
 
+export const getAllProjects = async (req, res) => {
+    try {
+        const projects = await Project.find().populate('userId');
+        res.status(200).json({
+            success: true,
+            data: projects,
+            message: 'Projects fetched successfully'
+        });
+    } catch (error) {
+        res.status(500).json({success: false, message: 'Server error', error: 'server_error'})
+    }
+}
+
+export const getProject = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id).populate('userId');
+        res.status(200).json({
+            success: true,
+            data: project,
+            message: 'Project fetched successfully'
+        });
+    } catch (error) {
+        res.status(500).json({success: false, message: 'Server error', error: 'server_error'})
+    }
+}
+
 export const getUserProjects = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.params.userId;
 
   try {
-    const projects = await Project.find({ userId });
+    const projects = await Project.find({ userId }).populate('userId');
     res.json({
       success: true,
       data: projects,
@@ -84,6 +110,32 @@ export const deleteProject = async (req, res) => {
       success: true,
       message: 'Project deleted successfully',
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+  }
+};
+
+export const likeProject = async (req, res) => {
+    try {
+      const project = await Project.findById(req.params.id);
+      if (!project) {
+        return res.status(404).json({ success: false, message: 'Project not found', error: 'not_found' });
+      }
+      const userId = req.user.id;
+
+    if (!project.likes.includes(userId)) {
+        await project.updateOne({ $push: { likes: userId } });
+        res.status(200).json({
+            success: true,
+            message: "The project has been liked"
+        });
+    } else {
+        await project.updateOne({ $pull: { likes: userId } });
+        res.status(200).json({
+            success: true,
+            message: "The project has been unliked"
+        });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
   }

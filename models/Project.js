@@ -29,7 +29,7 @@ const projectSchema = new mongoose.Schema({
   collaborators: {
       type: Array,
       default: []
-  }, // Optional collaborators
+  }, 
   duration: {
       type: String,
   },

@@ -56,7 +56,7 @@ app.use(
 })();
 
 // Routes 
-app.use('/v1/api/auth', authRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/events', eventRoutes);
 app.use('/api/v1/news', newsRoutes);
