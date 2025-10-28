@@ -1,35 +1,47 @@
-import mongoose from "mongoose";   
+import mongoose from "mongoose";
 
 const EventSchema = new mongoose.Schema({
-    userId: {
-        type: String,
-        required: true
-    },
-    header: {
-        type: String,
-        required: true,
-    },
-    img: {
-        type: String,
-    },
-    desc: {
-        type: String,
-        required: true
-    },
-    likes: {
-        type: Array,
-        default: []
-    },
-    dislikes: {
-        type: Array,
-        default: []
-    },
-    views: {
-        type: Array,
-        default: []
-    }
+  userId: {
+    type: String,
+    required: true
+  },
+  header: {
+    type: String,
+    required: true,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
+  category: {
+    type: String,
+    required: true,
+  },
+  date: {
+    type: String,
+    required: true,
+  },
+  start: {
+    type: String,
+    required: true,
+  },
+  end: {
+    type: String,
+    required: true,
+  },
+  isFavorite: {
+    type: Boolean,
+    default: false,
+  },
+  img: {
+    type: String,
+  },
+  desc: {
+    type: String,
+    required: true
+  },
 },
-    { timestamps: true }
+  { timestamps: true }
 );
 
-export default mongoose.model('Event', EventSchema); 
+export default mongoose.model('Event', EventSchema);
