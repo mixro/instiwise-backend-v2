@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import redisClient from '../config/redis.js';
+import { clearRefreshCookie, generateTokens, setRefreshCookie } from '../utils/tokenUtils.js';
 
 export const register = async (req, res) => {
   const { email, password } = req.body;
@@ -23,7 +24,8 @@ export const register = async (req, res) => {
     });
     await user.save();
 
-    const accessToken = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '90d' });
+    const { accessToken, refreshToken } = generateTokens(user);
+    setRefreshCookie(res, refreshToken);
 
     res.status(201).json({
       success: true,
@@ -78,7 +80,8 @@ export const setupUsername = async (req, res) => {
     user.isActive = true;
     await user.save();
 
-    const accessToken = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const { accessToken, refreshToken } = generateTokens(user);
+    setRefreshCookie(res, refreshToken);
 
     res.json({
       success: true,
@@ -118,7 +121,8 @@ export const login = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid credentials', error: 'auth_error' });
     }
 
-    const accessToken = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '90d' });
+    const { accessToken, refreshToken } = generateTokens(user);
+    setRefreshCookie(res, refreshToken);
 
     res.json({
       success: true,
@@ -181,9 +185,58 @@ export const getMe = async (req, res) => {
   }
 };
 
-export const logout = async (req, res) => {
+export const refreshToken = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({ success: false, message: 'No refresh token', error: 'auth_error' });
+  }
+
+  const isBlacklisted = await redisClient.get(`blacklist:refresh:${refreshToken}`);
+  if (isBlacklisted) {
+    return res.status(401).json({ success: false, message: 'Token revoked', error: 'auth_error' });
+  }
+
   try {
-    await redisClient.setEx(`blacklist:${req.token}`, 3600, 'true'); // 1 hour blacklist
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found', error: 'auth_error' });
+    }
+
+    const accessToken = jwt.sign(
+      { id: user._id, isAdmin: user.isAdmin },
+      process.env.JWT_SECRET,
+      { expiresIn: '90d' }
+    );
+
+    res.json({
+      success: true,
+      data: { accessToken },
+      message: 'Token refreshed',
+    });
+  } catch (error) {
+    res.status(401).json({ success: false, message: 'Invalid refresh token', error: 'auth_error' });
+  }
+};
+
+export const logout = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  try {
+    // Blacklist access token
+    if (req.token) {
+      await redisClient.setEx(`blacklist:${req.token}`, 90 * 24 * 3600, 'true');
+    }
+
+    // Blacklist refresh token
+    if (refreshToken) {
+      await redisClient.setEx(`blacklist:refresh:${refreshToken}`, 180 * 24 * 3600, 'true');
+    }
+
+    clearRefreshCookie(res);
+
     res.json({ success: true, message: 'Logout successful' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
