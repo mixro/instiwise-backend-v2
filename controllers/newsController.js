@@ -176,3 +176,29 @@ export const dislikeNews = async (req, res) => {
       res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
   }
 };
+
+export const viewNews = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id.toString(); // Ensure string
+
+  try {
+    // Use $addToSet to prevent duplicates
+    const news = await New.findByIdAndUpdate(
+      id,
+      { $addToSet: { views: userId } },
+      { new: true }
+    );
+
+    if (!news) {
+      return res.status(404).json({ success: false, message: 'News not found', error: 'not_found' });
+    }
+
+    res.json({
+      success: true,
+      message: `News: "${news.header}", viewed`,
+    });
+  } catch (error) {
+    console.error('viewNews error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+  }
+};

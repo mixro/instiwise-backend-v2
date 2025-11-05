@@ -1,5 +1,5 @@
 import express from 'express';
-import { createNews, updateNews, deleteNews, getAllNews, getNews, likeNews, dislikeNews } from '../controllers/newsController.js';
+import { createNews, updateNews, deleteNews, getAllNews, getNews, likeNews, dislikeNews, viewNews } from '../controllers/newsController.js';
 import authenticateToken from '../middleware/auth.js';
 
 const router = express.Router();
@@ -11,5 +11,6 @@ router.put('/:id', authenticateToken, updateNews);
 router.put('/:id/like', authenticateToken, likeNews);
 router.put('/:id/dislike', authenticateToken, dislikeNews);
 router.delete('/:id', authenticateToken, deleteNews);
+router.post('/:id/view', authenticateToken, viewNews);
 
 export default router;
