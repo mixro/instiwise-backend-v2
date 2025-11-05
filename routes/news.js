@@ -11,6 +11,6 @@ router.put('/:id', authenticateToken, updateNews);
 router.put('/:id/like', authenticateToken, likeNews);
 router.put('/:id/dislike', authenticateToken, dislikeNews);
 router.delete('/:id', authenticateToken, deleteNews);
-router.post('/:id/view', authenticateToken, viewNews);
+router.put('/:id/view', authenticateToken, viewNews);
 
 export default router;
