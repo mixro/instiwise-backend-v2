@@ -25,7 +25,11 @@ export const register = async (req, res) => {
     await user.save();
 
     const { accessToken, refreshToken } = generateTokens(user);
-    setRefreshCookie(res, refreshToken);
+    
+    if (!req.headers['x-mobile-app']) {
+    // only for web requests
+      setRefreshCookie(res, refreshToken);
+    }
 
     res.status(201).json({
       success: true,
@@ -42,7 +46,8 @@ export const register = async (req, res) => {
             connectionsCount: user.connectionsCount,
             isActive: user.isActive
         }, 
-        accessToken 
+        accessToken ,
+        refreshToken
       },
       message: 'User created',
     });
@@ -122,7 +127,11 @@ export const login = async (req, res) => {
     }
 
     const { accessToken, refreshToken } = generateTokens(user);
-    setRefreshCookie(res, refreshToken);
+
+    if (!req.headers['x-mobile-app']) {
+    // only for web requests
+      setRefreshCookie(res, refreshToken);
+    }
 
     res.json({
       success: true,
@@ -139,7 +148,8 @@ export const login = async (req, res) => {
             connectionsCount: user.connectionsCount,
             isActive: user.isActive
         }, 
-        accessToken 
+        accessToken,
+        refreshToken 
       },
       message: 'Login successful',
     });
@@ -186,7 +196,7 @@ export const getMe = async (req, res) => {
 };
 
 export const refreshToken = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.body.refreshToken || req.cookies.refreshToken;
 
   if (!refreshToken) {
     return res.status(401).json({ success: false, message: 'No refresh token', error: 'auth_error' });
@@ -222,7 +232,7 @@ export const refreshToken = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.body.refreshToken || req.cookies.refreshToken;
 
   try {
     // Blacklist access token
@@ -235,7 +245,10 @@ export const logout = async (req, res) => {
       await redisClient.setEx(`blacklist:refresh:${refreshToken}`, 180 * 24 * 3600, 'true');
     }
 
-    clearRefreshCookie(res);
+    if (!req.headers['x-mobile-app']) {
+      // only for web requests
+      clearRefreshCookie(res);
+    }
 
     res.json({ success: true, message: 'Logout successful' });
   } catch (error) {
