@@ -1,6 +1,6 @@
 import express from 'express'
-import { validateLogin, validateRegister, validateRequest, validateUsername } from '../middleware/validate.js';
-import { getMe, login, logout, refreshToken, register, setupUsername } from '../controllers/authController.js';
+import { validateLogin, validatePassword, validateRegister, validateRequest, validateUsername } from '../middleware/validate.js';
+import { changeSelfPassword, getMe, login, logout, refreshToken, register, setupUsername } from '../controllers/authController.js';
 import authenticateToken from '../middleware/auth.js';
 
 const router = express.Router();
@@ -11,5 +11,6 @@ router.get('/me', authenticateToken, getMe);
 router.post('/logout', authenticateToken, logout);
 router.post('/refresh', refreshToken);
 router.post('/setup-username', authenticateToken, validateUsername, validateRequest, setupUsername);
+router.post('/me/change-password', authenticateToken, validatePassword, validateRequest, changeSelfPassword);
 
 export default router;

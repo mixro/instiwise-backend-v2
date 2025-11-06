@@ -232,6 +232,41 @@ export const refreshToken = async (req, res) => {
   }
 };
 
+// New: Self Password Change
+export const changeSelfPassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.user.id; // Always from JWT
+  console.log("checked")
+
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ success: false, message: 'Both passwords are required', error: 'validation_error' });
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found', error: 'not_found' });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Incorrect old password', error: 'auth_error' });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully',
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+  }
+};
+
+
 export const logout = async (req, res) => {
   const refreshToken = req.body.refreshToken || req.cookies.refreshToken;
 
