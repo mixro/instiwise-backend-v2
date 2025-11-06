@@ -42,22 +42,80 @@ export const getUserById = async (req, res) => {
 export const updateUser = async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
+  const userId = req.user.id.toString(); // For self-checks
 
-  // Prevent password update here
+  // Prevent password and isAdmin updates here
   delete updates.password;
-  delete updates.isAdmin; // Admin status only via toggle
+  delete updates.isAdmin;
 
   try {
-    const user = await User.findByIdAndUpdate(id, updates, {
-      new: true,
-      runValidators: true,
-    }).select('-password');
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found', error: 'not_found' });
+    }
 
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    // Unique checks for username/email
+    if (updates.username && updates.username !== user.username) {
+      const existingUsername = await User.findOne({ username: updates.username });
+      if (existingUsername && existingUsername._id.toString() !== id) {
+        return res.status(400).json({ success: false, message: 'Username already taken', error: 'validation_error' });
+      }
+    }
 
-    res.json({ success: true, data: user, message: 'Profile updated' });
+    if (updates.email && updates.email !== user.email) {
+      const existingEmail = await User.findOne({ email: updates.email });
+      if (existingEmail && existingEmail._id.toString() !== id) {
+        return res.status(400).json({ success: false, message: 'Email already in use', error: 'validation_error' });
+      }
+    }
+
+    // Apply updates
+    Object.assign(user, updates);
+    await user.save();
+
+    const updatedUser = await User.findById(id).select('-password');
+
+    res.json({
+      success: true,
+      data: updatedUser,
+      message: 'User updated successfully',
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
+    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+  }
+};
+
+// New: Self Password Change
+export const changeSelfPassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.user.id; // Always from JWT
+  console.log(userId);
+
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ success: false, message: 'Both passwords are required', error: 'validation_error' });
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found', error: 'not_found' });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Incorrect old password', error: 'auth_error' });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully',
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
   }
 };
 
@@ -92,40 +150,6 @@ export const toggleAdmin = async (req, res) => {
       success: true,
       data: { isAdmin: user.isAdmin },
       message: `User ${user.isAdmin ? 'promoted to' : 'demoted from'} admin`,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
-  }
-};
-
-// ---------- ADMIN: Change Password (secure) ----------
-export const changeUserPassword = async (req, res) => {
-  const { id } = req.params;
-  const { newPassword } = req.body;
-
-  if (!newPassword || newPassword.length < 6) {
-    return res
-      .status(400)
-      .json({ success: false, message: 'Password must be at least 8 characters', error: 'validation_error' });
-  }
-
-  try {
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-    const user = await User.findByIdAndUpdate(
-      id,
-      { password: hashedPassword },
-      { new: true }
-    ).select('-password');
-
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found', error: 'not_found' });
-    }
-
-    res.json({
-      success: true,
-      message: 'Password updated successfully',
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });

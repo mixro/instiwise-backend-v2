@@ -103,7 +103,8 @@ export const setupUsername = async (req, res) => {
             connectionsCount: user.connectionsCount,
             isActive: user.isActive
         },
-        accessToken 
+        accessToken, 
+        refreshToken
       },
       message: 'Username set successfully',
     });

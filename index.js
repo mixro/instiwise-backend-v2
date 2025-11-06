@@ -43,7 +43,7 @@ app.use(cookieParser());
 app.use(
   rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 1000, // 1000 requests per IP
+    max: 100000, // 1000 requests per IP
   })
 );
 
