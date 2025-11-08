@@ -172,7 +172,7 @@ export const toggleFavorite = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const event = await Event.findOne({ _id: id, userId: req.user.id });
+    const event = await Event.findOne({ _id: id });
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found or unauthorized', error: 'not_found' });
     }
