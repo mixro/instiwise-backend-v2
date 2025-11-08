@@ -236,7 +236,6 @@ export const refreshToken = async (req, res) => {
 export const changeSelfPassword = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const userId = req.user.id; // Always from JWT
-  console.log("checked")
 
   if (!oldPassword || !newPassword) {
     return res.status(400).json({ success: false, message: 'Both passwords are required', error: 'validation_error' });

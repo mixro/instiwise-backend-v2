@@ -1,4 +1,5 @@
 import Event from '../models/Event.js';
+import { classifyEvent } from '../utils/dateTimeUtils.js';
 
 // Create Event
 export const createEvent = async (req, res) => {
@@ -56,6 +57,65 @@ export const getEvent = async (req, res) => {
       success: true,
       data: event,
       message: 'Event fetched successfully',
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+  }
+};
+
+// Get Upcoming Events
+export const getUpcomingEvents = async (req, res) => {
+  console.log("imefika")
+  try {
+    const events = await Event.find().sort({ date: 1, start: 1 });
+    const upcoming = events
+      .filter(e => classifyEvent(e) === 'upcoming')
+      .map(e => ({ ...e.toObject(), status: 'upcoming' }));
+
+    res.json({
+      success: true,
+      data: upcoming,
+      count: upcoming.length,
+      message: 'Upcoming events fetched',
+    });
+  } catch (error) {
+    console.error('getUpcomingEvents error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+  }
+};
+
+// Get Ongoing Events
+export const getOngoingEvents = async (req, res) => {
+  try {
+    const events = await Event.find().sort({ start: 1 });
+    const ongoing = events
+      .filter(e => classifyEvent(e) === 'ongoing')
+      .map(e => ({ ...e.toObject(), status: 'ongoing' }));
+
+    res.json({
+      success: true,
+      data: ongoing,
+      count: ongoing.length,
+      message: 'Ongoing events fetched',
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+  }
+};
+
+// Get Past Events
+export const getPastEvents = async (req, res) => {
+  try {
+    const events = await Event.find().sort({ date: -1, end: -1 });
+    const past = events
+      .filter(e => classifyEvent(e) === 'past')
+      .map(e => ({ ...e.toObject(), status: 'past' }));
+
+    res.json({
+      success: true,
+      data: past,
+      count: past.length,
+      message: 'Past events fetched',
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
