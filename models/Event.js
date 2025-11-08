@@ -9,9 +9,12 @@ const EventSchema = new mongoose.Schema({
   date: { type: String, required: true }, // Format: "DD/MM/YYYY"
   start: { type: String, required: true }, // Format: "09:00 AM"
   end: { type: String, required: true },   // Format: "11:00 AM"
-  isFavorite: { type: Boolean, default: false },
   img: { type: String },
   desc: { type: String, required: true },
+  favorites: {
+    type: Array,
+    default: []
+  },
 },
 { timestamps: true });
 

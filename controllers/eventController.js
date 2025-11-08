@@ -167,46 +167,63 @@ export const deleteEvent = async (req, res) => {
   }
 };
 
-// Toggle Favorite (New)
+// Toggle Favorite (Any Authenticated User)
 export const toggleFavorite = async (req, res) => {
   const { id } = req.params;
+  const userId = req.user.id.toString();
 
   try {
-    const event = await Event.findOne({ _id: id });
+    const event = await Event.findById(id);
     if (!event) {
-      return res.status(404).json({ success: false, message: 'Event not found or unauthorized', error: 'not_found' });
+      return res.status(404).json({ success: false, message: 'Event not found' });
     }
 
-    event.isFavorite = !event.isFavorite;
+    const isFavorited = event.favorites.includes(userId);
+    let updatedFavorites;
+
+    if (isFavorited) {
+      updatedFavorites = event.favorites.filter(uid => uid !== userId);
+    } else {
+      updatedFavorites = [...event.favorites, userId];
+    }
+
+    event.favorites = updatedFavorites;
     await event.save();
 
     res.json({
       success: true,
-      data: { isFavorite: event.isFavorite },
-      message: `Event ${event.isFavorite ? 'added to' : 'removed from'} favorites`,
+      data: {
+        isFavorited: !isFavorited,
+        favoriteCount: updatedFavorites.length
+      },
+      message: isFavorited ? 'Removed from favorites' : 'Added to favorites'
     });
   } catch (error) {
-    console.error('Toggle Favorite Error:', error);
-    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
-// Get Favorite Events
+// Get User's Personal Favorite Events
 export const getFavoriteEvents = async (req, res) => {
-  const userId = req.params.id;
+  const userId = req.user.id.toString();
 
   try {
-    const events = await Event.find({ userId, isFavorite: true });
-    if (!events) {
-      return res.status(404).json({ success: false, message: 'No favorite events', error: 'validation_error' });
-    }
+    const events = await Event.find({ favorites: userId })
+      .sort({ date: 1, start: 1 });
+
+    const enriched = events.map(e => ({
+      ...e.toObject(),
+      isFavorited: true,
+      favoriteCount: e.favorites.length
+    }));
 
     res.json({
       success: true,
-      data: events,
-      message: 'Favorite events fetched successfully',
+      data: enriched,
+      count: enriched.length,
+      message: 'Your favorite events'
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Server error', error: err });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
