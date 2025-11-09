@@ -64,6 +64,21 @@ export const getProject = async (req, res) => {
     }
 }
 
+export const getMyProjects = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const projects = await Project.find({ userId }).populate('userId', '-password');
+    res.json({
+      success: true,
+      data: projects,
+      message: 'Projects fetched successfully',
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+  }
+};
+
 export const getUserProjects = async (req, res) => {
   const userId = req.params.userId;
 

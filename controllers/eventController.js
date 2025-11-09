@@ -65,18 +65,26 @@ export const getEvent = async (req, res) => {
 
 // Get Upcoming Events
 export const getUpcomingEvents = async (req, res) => {
-  console.log("imefika")
   try {
-    const events = await Event.find().sort({ date: 1, start: 1 });
-    const upcoming = events
-      .filter(e => classifyEvent(e) === 'upcoming')
-      .map(e => ({ ...e.toObject(), status: 'upcoming' }));
+    const now = new Date();
+
+    const upcoming = await Event.find({
+      dateTime: { $gt: now } // Truly future events
+    })
+      .sort({ dateTime: 1 })    // Sort by actual datetime
+      .limit(4)
+
+    const enriched = upcoming.map(event => ({
+      ...event.toObject(),
+      isFavorited: req.user ? event.favorites.includes(req.user.id.toString()) : false,
+      favoriteCount: event.favorites.length
+    }));
 
     res.json({
       success: true,
-      data: upcoming,
-      count: upcoming.length,
-      message: 'Upcoming events fetched',
+      data: enriched,
+      count: enriched.length,
+      message: '4 most recent upcoming events'
     });
   } catch (error) {
     console.error('getUpcomingEvents error:', error);

@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProject, getUserProjects, updateProject, deleteProject, getAllProjects, getProject, likeProject } from '../controllers/projectController.js';
+import { createProject, getUserProjects, updateProject, deleteProject, getAllProjects, getProject, likeProject, getMyProjects } from '../controllers/projectController.js';
 import authenticateToken from '../middleware/auth.js';
 
 const router = express.Router();
@@ -7,6 +7,7 @@ const router = express.Router();
 router.post('/', authenticateToken, createProject);
 router.get('/', authenticateToken, getAllProjects);
 router.get('/:id', authenticateToken, getProject);
+router.get('/my/projects', authenticateToken, getMyProjects);
 router.get('/user/:userId', authenticateToken, getUserProjects);
 router.put('/:id', authenticateToken, updateProject);
 router.put('/:id/like', authenticateToken, likeProject);
