@@ -40,7 +40,7 @@ export const createProject = async (req, res) => {
 
 export const getAllProjects = async (req, res) => {
     try {
-        const projects = await Project.find().populate('userId');
+        const projects = await Project.find().populate('userId', '-password');
         res.status(200).json({
             success: true,
             data: projects,
@@ -53,7 +53,7 @@ export const getAllProjects = async (req, res) => {
 
 export const getProject = async (req, res) => {
     try {
-        const project = await Project.findById(req.params.id).populate('userId');
+        const project = await Project.findById(req.params.id).populate('userId', '-password');
         res.status(200).json({
             success: true,
             data: project,
@@ -68,7 +68,7 @@ export const getUserProjects = async (req, res) => {
   const userId = req.params.userId;
 
   try {
-    const projects = await Project.find({ userId }).populate('userId');
+    const projects = await Project.find({ userId }).populate('userId', '-password');
     res.json({
       success: true,
       data: projects,
