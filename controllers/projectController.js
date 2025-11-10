@@ -95,37 +95,38 @@ export const getUserProjects = async (req, res) => {
 };
 
 export const updateProject = async (req, res) => {
-  const { id } = req.params;
   const updates = req.body;
+  const project = req.project; // From middleware
 
   try {
-    const project = await Project.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
-    if (!project) {
-      return res.status(404).json({ success: false, message: 'Project not found', error: 'not_found' });
-    }
+    Object.assign(project, updates);
+    await project.save();
+
+    const updatedProject = await Project.findById(project._id); // Re-fetch if needed
+
     res.json({
       success: true,
-      data: project,
+      data: updatedProject,
       message: 'Project updated successfully',
     });
   } catch (error) {
+    console.error('updateProject error:', error);
     res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
   }
 };
 
 export const deleteProject = async (req, res) => {
-  const { id } = req.params;
+  const project = req.project;
 
   try {
-    const project = await Project.findByIdAndDelete(id);
-    if (!project) {
-      return res.status(404).json({ success: false, message: 'Project not found', error: 'not_found' });
-    }
+    await Project.findByIdAndDelete(project._id);
+
     res.json({
       success: true,
       message: 'Project deleted successfully',
     });
   } catch (error) {
+    console.error('deleteProject error:', error);
     res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
   }
 };
