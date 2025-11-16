@@ -1,4 +1,6 @@
 import { body, validationResult } from 'express-validator'
+import { rateLimit } from 'express-rate-limit';
+
 
 export const validateRegister = [
     body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
@@ -31,3 +33,9 @@ export const validatePassword = [
     .matches(/[A-Z]/).withMessage('Password must contain an uppercase letter')
     .matches(/[0-9]/).withMessage('Password must contain a number'),
 ]
+
+export const googleLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 mins
+  max: 10,
+  message: { success: false, message: 'Too many Google login attempts' }
+});

@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import redisClient from '../config/redis.js';
+import client from '../utils/googleClient.js';
 import { clearRefreshCookie, generateTokens, setRefreshCookie } from '../utils/tokenUtils.js';
 
 export const register = async (req, res) => {
@@ -156,6 +157,97 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+  }
+};
+
+export const googleLogin = async (req, res) => {
+  const { idToken } = req.body;
+
+  if (!idToken || typeof idToken !== 'string') {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid or missing ID token',
+      error: 'validation_error'
+    });
+  }
+
+  try {
+    // Verify token with Google
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_WEB_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) {
+      return res.status(401).json({ success: false, message: 'Invalid token payload' });
+    }
+
+    const { sub: googleId, email, name, picture, email_verified } = payload;
+
+    if (!email || !googleId) {
+      return res.status(400).json({ success: false, message: 'Missing email or Google ID' });
+    }
+
+    if (!email_verified) {
+      return res.status(403).json({ success: false, message: 'Email not verified by Google' });
+    }
+
+    // Find or create user
+    let user = await User.findOne({ googleId });
+
+    if (!user) {
+      // Generate safe username
+      const baseUsername = name ? name.split(' ')[0].toLowerCase() : email.split('@')[0];
+      let username = baseUsername;
+      let counter = 1;
+      while (await User.findOne({ username })) {
+        username = `${baseUsername}${counter++}`;
+      }
+
+      user = new User({
+        googleId,
+        email,
+        username,
+        img: picture,
+        isVerified: true,
+        // password: undefined (not set)
+      });
+      await user.save();
+    } else {
+      // Update picture if changed
+      if (picture && user.img !== picture) {
+        user.img = picture;
+        await user.save();
+      }
+    }
+
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens(user);
+    setRefreshCookie(res, refreshToken);
+
+    res.json({
+      success: true,
+      data: {
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          img: user.img,
+          isAdmin: user.isAdmin,
+          isVerified: user.isVerified
+        },
+        accessToken
+      },
+      message: user.isNew ? 'Registered with Google' : 'Logged in with Google'
+    });
+  } catch (error) {
+    console.error('Google login error:', error.message);
+    res.status(401).json({
+      success: false,
+      message: 'Failed to authenticate with Google',
+      error: 'auth_error'
+    });
   }
 };
 

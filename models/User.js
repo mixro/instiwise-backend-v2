@@ -10,8 +10,9 @@ const userSchema = new mongoose.Schema(
         return `user_${Math.random().toString(36).substring(2, 9)}`
       }
     },
+    googleId: { type: String, unique: true, sparse: true }, // Only for Google users
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String },
     gender: { type: String },
     course: { type: String },
     phone: { type: String },
@@ -21,10 +22,15 @@ const userSchema = new mongoose.Schema(
     connectionsCount: { type: Number, default: 0 }, // Tracks number of connections
     projectsCount: { type: Number, default: 0 }, // Tracks number of projects
     isAdmin: { type: Boolean, default: false },
+    isVerified: { type: Boolean, default: false }, // Google users = true
     isActive: { type: Boolean, default: false }, // New field to track username setup
   },
   { timestamps: true }
 );
+
+// Index for fast lookup
+userSchema.index({ googleId: 1 });
+userSchema.index({ email: 1 });
 
 // Middleware to update counts when connections or projects change
 userSchema.pre('save', function (next) {
