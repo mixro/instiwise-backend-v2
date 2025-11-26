@@ -29,8 +29,8 @@ const userSchema = new mongoose.Schema(
 );
 
 // Index for fast lookup
-userSchema.index({ googleId: 1 });
-userSchema.index({ email: 1 });
+//userSchema.index({ googleId: 1 });
+//userSchema.index({ email: 1 });
 
 // Middleware to update counts when connections or projects change
 userSchema.pre('save', function (next) {

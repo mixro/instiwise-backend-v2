@@ -36,6 +36,6 @@ export const validatePassword = [
 
 export const googleLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 mins
-  max: 10,
+  max: 100,
   message: { success: false, message: 'Too many Google login attempts' }
 });

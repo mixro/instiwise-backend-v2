@@ -214,12 +214,6 @@ export const googleLogin = async (req, res) => {
         // password: undefined (not set)
       });
       await user.save();
-    } else {
-      // Update picture if changed
-      if (picture && user.img !== picture) {
-        user.img = picture;
-        await user.save();
-      }
     }
 
     // Generate tokens
@@ -234,10 +228,15 @@ export const googleLogin = async (req, res) => {
           username: user.username,
           email: user.email,
           img: user.img,
+          bio: user.bio,
           isAdmin: user.isAdmin,
-          isVerified: user.isVerified
+          isVerified: user.isVerified,
+          projectsCount: user.projectsCount, 
+          connectionsCount: user.connectionsCount,
+          isActive: true
         },
-        accessToken
+        accessToken,
+        refreshToken
       },
       message: user.isNew ? 'Registered with Google' : 'Logged in with Google'
     });
@@ -259,14 +258,15 @@ export const getMe = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found', error: 'auth_error' });
     }
 
-    if (!user.isActive) {
-        return res.status(403).json({ success: false, message: "Please set your username first", error: 'auth_error' });
-    }
+    //if (!user.isActive) {
+    //    return res.status(403).json({ success: false, message: "Please set your username first", error: 'auth_error' });
+    //}
 
     res.json({
       success: true,
       user: {
         _id: user._id,
+        googleId: user.googleId,
         username: user.username,
         email: user.email,
         img: user.img,
