@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllUsers, getUserById, updateUser, deleteUser, toggleAdmin, } from '../controllers/userController.js';
+import { getAllUsers, getUserById, updateUser, deleteUser, toggleAdmin, getUserTimelyAnalytics, } from '../controllers/userController.js';
 import authenticateToken from '../middleware/auth.js';
 import verifyAdmin from '../middleware/verifyAdmin.js';
 import isSelfOrAdmin from '../middleware/isSelfOrAdmin.js';
@@ -15,5 +15,6 @@ router.get('/:id', authenticateToken, isSelfOrAdmin, getUserById);
 router.put('/:id', authenticateToken, isSelfOrAdmin, updateUser);
 router.delete('/:id', authenticateToken, isSelfOrAdmin, deleteUser);
 
+router.get('/analytics/timely', authenticateToken, verifyAdmin, getUserTimelyAnalytics);
 
 export default router;

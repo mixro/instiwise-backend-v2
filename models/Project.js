@@ -30,10 +30,6 @@ const projectSchema = new mongoose.Schema({
       type: Array,
       default: []
   }, 
-  views: {
-      type: Array,
-      default: []
-  }, 
   duration: {
       type: String,
   },
@@ -70,6 +66,10 @@ const projectSchema = new mongoose.Schema({
       type: Array,
       default: []
   },
+  views: {
+      type: Array,
+      default: []
+  }, 
 },
   { timestamps: true }
 );

@@ -1,4 +1,6 @@
 import Project from '../models/Project.js';
+import { startOfDay, startOfWeek, startOfMonth, subDays, subWeeks, subMonths } from 'date-fns';
+
 
 export const createProject = async (req, res) => {
   const { title, description, img, category, problem, collaborators, duration, goals, resources, budget, scope, plan, challenges } = req.body;
@@ -168,8 +170,8 @@ export const getProjectTimelyAnalytics = async (req, res) => {
       }).select('views likes createdAt');
 
       const count = projects.length;
-      const totalViews = projects.reduce((sum, p) => sum + p.views.length, 0);
-      const totalLikes = projects.reduce((sum, p) => sum + p.likes.length, 0);
+      const totalViews = projects.reduce((sum, p) => sum + (Array.isArray(p.views) ? p.views.length : 0), 0);
+      const totalLikes = projects.reduce((sum, p) => sum + (Array.isArray(p.likes) ? p.likes.length : 0), 0);
 
       return { count, totalViews, totalLikes };
     };
@@ -178,8 +180,8 @@ export const getProjectTimelyAnalytics = async (req, res) => {
     const allProjects = await Project.find().select('views likes').lean();
     const gross = {
       totalProjects: allProjects.length,
-      totalViews: allProjects.reduce((sum, p) => sum + p.views.length, 0),
       totalLikes: allProjects.reduce((sum, p) => sum + p.likes.length, 0),
+      totalViews: allProjects.reduce((sum, p) => sum + p.views.length, 0),
       averageViewsPerProject: allProjects.length > 0
         ? Math.round(allProjects.reduce((sum, p) => sum + p.views.length, 0) / allProjects.length)
         : 0,
