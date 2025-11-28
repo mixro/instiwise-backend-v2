@@ -1,5 +1,7 @@
 import Event from '../models/Event.js';
 import { classifyEvent } from '../utils/dateTimeUtils.js';
+import { startOfDay, startOfWeek, startOfMonth, subDays, subWeeks, subMonths } from 'date-fns';
+
 
 // Create Event
 export const createEvent = async (req, res) => {
@@ -233,5 +235,89 @@ export const getFavoriteEvents = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const getEventTimelyAnalytics = async (req, res) => {
+  try {
+    const now = new Date();
+
+    // Helper: Stats in a date range
+    const getStatsInRange = async (startDate, endDate = now) => {
+      const events = await Event.find({
+        createdAt: { $gte: startDate, $lte: endDate }
+      }).select('favorites createdAt');
+
+      const count = events.length;
+      const totalFavorites = events.reduce((sum, e) => sum + e.favorites.length, 0);
+
+      return { count, totalFavorites };
+    };
+
+    // === ALL-TIME GROSS METRICS ===
+    const allEvents = await Event.find().select('favorites').lean();
+    const gross = {
+      totalEvents: allEvents.length,
+      totalFavorites: allEvents.reduce((sum, e) => sum + e.favorites.length, 0),
+      averageFavoritesPerEvent: allEvents.length > 0
+        ? Math.round(allEvents.reduce((sum, e) => sum + e.favorites.length, 0) / allEvents.length)
+        : 0
+    };
+
+    // === PERIODIC STATS ===
+    const today = await getStatsInRange(startOfDay(now));
+    const yesterday = await getStatsInRange(startOfDay(subDays(now, 1)), startOfDay(now));
+
+    const thisWeek = await getStatsInRange(startOfWeek(now));
+    const lastWeek = await getStatsInRange(startOfWeek(subWeeks(now, 1)), startOfWeek(now));
+
+    const thisMonth = await getStatsInRange(startOfMonth(now));
+    const lastMonth = await getStatsInRange(startOfMonth(subMonths(now, 1)), startOfMonth(now));
+
+    // Helper: % change
+    const percentChange = (current, previous) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    res.json({
+      success: true,
+      data: {
+        grossMetrics: {
+          totalEvents: gross.totalEvents,
+          totalFavorites: gross.totalFavorites,
+          averageFavoritesPerEvent: gross.averageFavoritesPerEvent
+        },
+        summary: {
+          today: {
+            eventsCount: today.count,
+            favorites: today.totalFavorites,
+            eventsGrowth: percentChange(today.count, yesterday.count),
+            favoritesGrowth: percentChange(today.totalFavorites, yesterday.totalFavorites)
+          },
+          thisWeek: {
+            eventsCount: thisWeek.count,
+            favorites: thisWeek.totalFavorites,
+            eventsGrowth: percentChange(thisWeek.count, lastWeek.count),
+            favoritesGrowth: percentChange(thisWeek.totalFavorites, lastWeek.totalFavorites)
+          },
+          thisMonth: {
+            eventsCount: thisMonth.count,
+            favorites: thisMonth.totalFavorites,
+            eventsGrowth: percentChange(thisMonth.count, lastMonth.count),
+            favoritesGrowth: percentChange(thisMonth.totalFavorites, lastMonth.totalFavorites)
+          }
+        },
+        generatedAt: now.toISOString()
+      },
+      message: 'Event analytics fetched successfully'
+    });
+  } catch (error) {
+    console.error('getEventTimelyAnalytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: 'server_error'
+    });
   }
 };

@@ -220,6 +220,17 @@ export const getTimelyNewsAnalytics = async (req, res) => {
       return { count, totalViews };
     };
 
+    // === ALL-TIME GROSS METRICS ===
+    const allTime = await New.find().select('views likes').lean();
+    const gross = {
+      totalNews: allTime.length,
+      totalViews: allTime.reduce((sum, n) => sum + n.views.length, 0),
+      totalLikes: allTime.reduce((sum, n) => sum + n.likes.length, 0),
+      averageViewsPerNews: allTime.length > 0 
+        ? Math.round(allTime.reduce((sum, n) => sum + n.views.length, 0) / allTime.length)
+        : 0
+    };
+
     // === TODAY ===
     const today = await getStatsInRange(startOfDay(now));
     const yesterday = await getStatsInRange(startOfDay(subDays(now, 1)), startOfDay(now));
@@ -241,20 +252,26 @@ export const getTimelyNewsAnalytics = async (req, res) => {
     res.json({
       success: true,
       data: {
+        grossMetrics: {
+          totalNews: gross.totalNews,
+          totalViews: gross.totalViews,
+          totalLikes: gross.totalLikes,
+          averageViewsPerNews: gross.averageViewsPerNews
+        },
         summary: {
-          today: {
+          Daily: {
             newsCount: today.count,
             views: today.totalViews,
             newsGrowth: percentChange(today.count, yesterday.count),
             viewsGrowth: percentChange(today.totalViews, yesterday.totalViews)
           },
-          thisWeek: {
+          Weekly: {
             newsCount: thisWeek.count,
             views: thisWeek.totalViews,
             newsGrowth: percentChange(thisWeek.count, lastWeek.count),
             viewsGrowth: percentChange(thisWeek.totalViews, lastWeek.totalViews)
           },
-          thisMonth: {
+          Monthly: {
             newsCount: thisMonth.count,
             views: thisMonth.totalViews,
             newsGrowth: percentChange(thisMonth.count, lastMonth.count),
