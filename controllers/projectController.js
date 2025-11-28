@@ -156,3 +156,100 @@ export const likeProject = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
   }
 };
+
+export const getProjectTimelyAnalytics = async (req, res) => {
+  try {
+    const now = new Date();
+
+    // Helper: Stats in a date range
+    const getStatsInRange = async (startDate, endDate = now) => {
+      const projects = await Project.find({
+        createdAt: { $gte: startDate, $lte: endDate }
+      }).select('views likes createdAt');
+
+      const count = projects.length;
+      const totalViews = projects.reduce((sum, p) => sum + p.views.length, 0);
+      const totalLikes = projects.reduce((sum, p) => sum + p.likes.length, 0);
+
+      return { count, totalViews, totalLikes };
+    };
+
+    // === ALL-TIME GROSS METRICS ===
+    const allProjects = await Project.find().select('views likes').lean();
+    const gross = {
+      totalProjects: allProjects.length,
+      totalViews: allProjects.reduce((sum, p) => sum + p.views.length, 0),
+      totalLikes: allProjects.reduce((sum, p) => sum + p.likes.length, 0),
+      averageViewsPerProject: allProjects.length > 0
+        ? Math.round(allProjects.reduce((sum, p) => sum + p.views.length, 0) / allProjects.length)
+        : 0,
+      averageLikesPerProject: allProjects.length > 0
+        ? Math.round(allProjects.reduce((sum, p) => sum + p.likes.length, 0) / allProjects.length)
+        : 0
+    };
+
+    // === PERIODIC STATS ===
+    const today = await getStatsInRange(startOfDay(now));
+    const yesterday = await getStatsInRange(startOfDay(subDays(now, 1)), startOfDay(now));
+
+    const thisWeek = await getStatsInRange(startOfWeek(now));
+    const lastWeek = await getStatsInRange(startOfWeek(subWeeks(now, 1)), startOfWeek(now));
+
+    const thisMonth = await getStatsInRange(startOfMonth(now));
+    const lastMonth = await getStatsInRange(startOfMonth(subMonths(now, 1)), startOfMonth(now));
+
+    // Helper: % change
+    const percentChange = (current, previous) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    res.json({
+      success: true,
+      data: {
+        grossMetrics: {
+          totalProjects: gross.totalProjects,
+          totalViews: gross.totalViews,
+          totalLikes: gross.totalLikes,
+          averageViewsPerProject: gross.averageViewsPerProject,
+          averageLikesPerProject: gross.averageLikesPerProject
+        },
+        summary: {
+          today: {
+            projectsCount: today.count,
+            views: today.totalViews,
+            likes: today.totalLikes,
+            projectsGrowth: percentChange(today.count, yesterday.count),
+            viewsGrowth: percentChange(today.totalViews, yesterday.totalViews),
+            likesGrowth: percentChange(today.totalLikes, yesterday.totalLikes)
+          },
+          thisWeek: {
+            projectsCount: thisWeek.count,
+            views: thisWeek.totalViews,
+            likes: thisWeek.totalLikes,
+            projectsGrowth: percentChange(thisWeek.count, lastWeek.count),
+            viewsGrowth: percentChange(thisWeek.totalViews, lastWeek.totalViews),
+            likesGrowth: percentChange(thisWeek.totalLikes, lastWeek.totalLikes)
+          },
+          thisMonth: {
+            projectsCount: thisMonth.count,
+            views: thisMonth.totalViews,
+            likes: thisMonth.totalLikes,
+            projectsGrowth: percentChange(thisMonth.count, lastMonth.count),
+            viewsGrowth: percentChange(thisMonth.totalViews, lastMonth.totalViews),
+            likesGrowth: percentChange(thisMonth.totalLikes, lastMonth.totalLikes)
+          }
+        },
+        generatedAt: now.toISOString()
+      },
+      message: 'Project analytics fetched successfully'
+    });
+  } catch (error) {
+    console.error('getProjectTimelyAnalytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: 'server_error'
+    });
+  }
+};
