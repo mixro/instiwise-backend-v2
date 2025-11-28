@@ -1,4 +1,5 @@
 import New from '../models/New.js';
+import { startOfDay, startOfWeek, startOfMonth, subDays, subWeeks, subMonths } from 'date-fns';
 
 export const createNews = async (req, res) => {
   const { header, img, desc } = req.body;
@@ -200,5 +201,76 @@ export const viewNews = async (req, res) => {
   } catch (error) {
     console.error('viewNews error:', error);
     res.status(500).json({ success: false, message: 'Server error', error: 'server_error' });
+  }
+};
+
+export const getTimelyNewsAnalytics = async (req, res) => {
+  try {
+    const now = new Date();
+
+    // Helper: Count news + views in a date range
+    const getStatsInRange = async (startDate, endDate = now) => {
+      const news = await New.find({
+        createdAt: { $gte: startDate, $lte: endDate }
+      }).select('views createdAt');
+
+      const count = news.length;
+      const totalViews = news.reduce((sum, n) => sum + n.views.length, 0);
+
+      return { count, totalViews };
+    };
+
+    // === TODAY ===
+    const today = await getStatsInRange(startOfDay(now));
+    const yesterday = await getStatsInRange(startOfDay(subDays(now, 1)), startOfDay(now));
+
+    // === THIS WEEK ===
+    const thisWeek = await getStatsInRange(startOfWeek(now));
+    const lastWeek = await getStatsInRange(startOfWeek(subWeeks(now, 1)), startOfWeek(now));
+
+    // === THIS MONTH ===
+    const thisMonth = await getStatsInRange(startOfMonth(now));
+    const lastMonth = await getStatsInRange(startOfMonth(subMonths(now, 1)), startOfMonth(now));
+
+    // Helper: Calculate percentage change
+    const percentChange = (current, previous) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          today: {
+            newsCount: today.count,
+            views: today.totalViews,
+            newsGrowth: percentChange(today.count, yesterday.count),
+            viewsGrowth: percentChange(today.totalViews, yesterday.totalViews)
+          },
+          thisWeek: {
+            newsCount: thisWeek.count,
+            views: thisWeek.totalViews,
+            newsGrowth: percentChange(thisWeek.count, lastWeek.count),
+            viewsGrowth: percentChange(thisWeek.totalViews, lastWeek.totalViews)
+          },
+          thisMonth: {
+            newsCount: thisMonth.count,
+            views: thisMonth.totalViews,
+            newsGrowth: percentChange(thisMonth.count, lastMonth.count),
+            viewsGrowth: percentChange(thisMonth.totalViews, lastMonth.totalViews)
+          }
+        },
+        generatedAt: now.toISOString()
+      },
+      message: 'News analytics fetched successfully'
+    });
+  } catch (error) {
+    console.error('getTimelyNewsAnalytics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: 'server_error'
+    });
   }
 };

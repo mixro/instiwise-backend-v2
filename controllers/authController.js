@@ -160,6 +160,72 @@ export const login = async (req, res) => {
   }
 };
 
+export const adminLogin = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // 1. Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+        error: 'auth_error'
+      });
+    }
+
+    // 2. Check if user is admin
+    if (!user.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.',
+        error: 'forbidden'
+      });
+    }
+
+    // 3. Verify password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+        error: 'auth_error'
+      });
+    }
+
+    // 4. Generate tokens
+    const { accessToken, refreshToken } = generateTokens(user);
+    setRefreshCookie(res, refreshToken);
+
+    // 5. Success response (include isAdmin flag)
+    res.json({
+      success: true,
+      data: {
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          img: user.img,
+          isAdmin: user.isAdmin,
+          isVerified: user.isVerified,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
+        accessToken,
+        refreshToken
+      },
+      message: 'Admin login successful'
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: 'server_error'
+    });
+  }
+};
+
 export const googleLogin = async (req, res) => {
   const { idToken } = req.body;
 
