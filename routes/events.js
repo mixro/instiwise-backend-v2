@@ -16,6 +16,6 @@ router.get('/upcoming', authenticateToken, getUpcomingEvents);
 router.get('/ongoing', authenticateToken, getOngoingEvents);
 router.get('/past', authenticateToken, getPastEvents);
 
-router.get('/analytics/timely', authenticateToken, verifyAdmin, getEventTimelyAnalytics);
+router.get('/stats/timely', authenticateToken, verifyAdmin, getEventTimelyAnalytics);
 
 export default router;

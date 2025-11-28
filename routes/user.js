@@ -15,6 +15,6 @@ router.get('/:id', authenticateToken, isSelfOrAdmin, getUserById);
 router.put('/:id', authenticateToken, isSelfOrAdmin, updateUser);
 router.delete('/:id', authenticateToken, isSelfOrAdmin, deleteUser);
 
-router.get('/analytics/timely', authenticateToken, verifyAdmin, getUserTimelyAnalytics);
+router.get('/stats/timely', authenticateToken, verifyAdmin, getUserTimelyAnalytics);
 
 export default router;

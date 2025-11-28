@@ -13,6 +13,6 @@ router.put('/:id/like', authenticateToken, likeNews);
 router.put('/:id/dislike', authenticateToken, dislikeNews);
 router.delete('/:id', authenticateToken, verifyAdmin, deleteNews);
 router.put('/:id/view', authenticateToken, viewNews);
-router.get('/analytics/timely', authenticateToken, verifyAdmin, getTimelyNewsAnalytics);
+router.get('/stats/timely', authenticateToken, verifyAdmin, getTimelyNewsAnalytics);
 
 export default router;

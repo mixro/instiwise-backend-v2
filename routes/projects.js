@@ -15,6 +15,6 @@ router.put('/:id/like', authenticateToken, likeProject);
 router.put('/:id', authenticateToken, ownsProject, updateProject);
 router.delete('/:id', authenticateToken, ownsProject, deleteProject);
 
-router.get('/analytics/timely', authenticateToken, verifyAdmin, getProjectTimelyAnalytics);
+router.get('/stats/timely', authenticateToken, verifyAdmin, getProjectTimelyAnalytics);
 
 export default router;
