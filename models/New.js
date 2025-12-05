@@ -16,6 +16,9 @@ const NewSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    category: {
+        type: String,
+    },
     likes: {
         type: Array,
         default: []

@@ -2,7 +2,7 @@ import New from '../models/New.js';
 import { startOfDay, startOfWeek, startOfMonth, subDays, subWeeks, subMonths } from 'date-fns';
 
 export const createNews = async (req, res) => {
-  const { header, img, desc } = req.body;
+  const { header, img, desc, category } = req.body;
   const userId = req.user.id;
 
   try {
@@ -11,6 +11,7 @@ export const createNews = async (req, res) => {
       header,
       img,
       desc,
+      category,
     });
     await news.save();
 

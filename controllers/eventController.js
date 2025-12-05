@@ -139,7 +139,7 @@ export const updateEvent = async (req, res) => {
 
   try {
     const event = await Event.findOneAndUpdate(
-      { _id: id, userId: req.user.id },
+      { _id: id },
       updates,
       { new: true, runValidators: true }
     );
@@ -163,7 +163,7 @@ export const deleteEvent = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const event = await Event.findOneAndDelete({ _id: id, userId: req.user.id });
+    const event = await Event.findOneAndDelete({ _id: id });
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found or unauthorized', error: 'not_found' });
     }
