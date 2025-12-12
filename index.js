@@ -12,6 +12,7 @@ import projectRoutes from './routes/projects.js';
 import eventRoutes from './routes/events.js';
 import newsRoutes from './routes/news.js';
 import userRoutes from './routes/user.js';
+import demoRequestRoutes from './routes/demoRequests.js';
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -62,6 +63,7 @@ app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/events', eventRoutes);
 app.use('/api/v1/news', newsRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/demo-requests', demoRequestRoutes);
 
 // Error handling
 app.use(errorHandler);
