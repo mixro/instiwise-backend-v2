@@ -12,6 +12,7 @@ import projectRoutes from './routes/projects.js';
 import eventRoutes from './routes/events.js';
 import newsRoutes from './routes/news.js';
 import userRoutes from './routes/user.js';
+import dashboardRoutes from './routes/dashboard.js';
 import demoRequestRoutes from './routes/demoRequests.js';
 
 // Load environment variables
@@ -33,7 +34,7 @@ app.use(
       }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
@@ -64,6 +65,7 @@ app.use('/api/v1/events', eventRoutes);
 app.use('/api/v1/news', newsRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/demo-requests', demoRequestRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
 
 // Error handling
 app.use(errorHandler);
