@@ -22,7 +22,7 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-const allowedOrigins = ['http://localhost:8081', 'http://localhost:5173'];
+const allowedOrigins = ['http://localhost:8081', 'http://localhost:5173', 'http://localhost:5174'];
 app.use(
   cors({
     origin: (origin, callback) => {
