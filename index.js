@@ -23,7 +23,7 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-const allowedOrigins = ['http://localhost:8081', 'http://localhost:5173', 'http://localhost:5174'];
+const allowedOrigins = ['http://localhost:8081', 'http://localhost:5173', 'http://localhost:5174', 'https://instiwise-landing.netlify.app/', 'https://instiwise-admin-v2.netlify.app/'];
 app.use(
   cors({
     origin: (origin, callback) => {
